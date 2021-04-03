@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
+const socketIO = require('socket.io');
 require('dotenv').config();
 
 const indexRouter = require('./routes/index');
@@ -9,6 +10,14 @@ const authRouter = require('./routes/auth');
 const db = process.env.MONGODB_URL;
 
 const app = express();
+
+const port = process.env.PORT || 3000;
+const server = app.listen(port, (err) => {
+    console.log(`API listening on ${port}!`);
+    if (err) throw err;
+});
+
+const io = socketIO(server, { cors: true, origins: '*:*' });
 
 mongoose.connect(db, { useUnifiedTopology: true, useNewUrlParser: true })
     .then(() => console.log('MongoDB Connected...'))
@@ -26,10 +35,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api', indexRouter);
 app.use('/auth', authRouter);
 
-const port = process.env.PORT || 3000
-app.listen(port, (err) => {
-    console.log(`API listening on ${port}!`)
-    if (err) throw err
+io.on('connection', socket => {
+    console.log('a user connected: ' + socket.id);
+    socket.on('disconnect', async() => { // Disconnect event
+        let user = await User.findOne({ socket_id: socket.id })
+        if (user) {
+            user.socket_id = "" // Delete socketID from database
+            user.save()
+        }
+    })
 })
 
 module.exports = app;
