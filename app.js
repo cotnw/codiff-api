@@ -44,6 +44,9 @@ io.on('connection', socket => {
             user.save()
         }
     })
+    socket.on('save', async(saveObject) => {
+        io.sockets.emit('status', saveObject)
+    })
 })
 
 module.exports = app;
