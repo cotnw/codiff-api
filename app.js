@@ -45,7 +45,7 @@ io.on('connection', socket => {
         }
     })
     socket.on('save', async(saveObject) => {
-        io.sockets.emit('status', saveObject)
+        io.sockets.emit('save', saveObject)
     })
 })
 
