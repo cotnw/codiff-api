@@ -5,7 +5,7 @@ const User = require('../models/User')
 const { oauthHeader } = require('../controllers/constants')
 
 router.get('/', (req, res) => {
-    res.redirect('https://github.com/login/oauth/authorize?client_id=45f28c0f178cb8c343ab&scope=repo')
+    res.redirect('https://github.com/login/oauth/authorize?client_id=45f28c0f178cb8c343ab&scope=repo&read:org')
 });
 
 router.get('/callback', (req, res) => {
@@ -20,18 +20,18 @@ router.get('/callback', (req, res) => {
             let profileRes = await axios.get('https://api.github.com/user', oauthHeader(accessToken))
             let username = profileRes.data.login
             let img = profileRes.data.avatar_url
-            User.findOne({ username: username }).then((user) => {
+            User.findOne({ username: username }).then(async (user) => {
                 if (!user) { //see if user already exists
                     let newUser = User({
                         username,
                         access_token: accessToken,
                         img
                     })
-                    newUser.save()
+                    await newUser.save()
                 } else { //if user exists, update access token
                     if (accessToken != user.access_token) {
                         user.access_token = accessToken
-                        user.save()
+                        await user.save()
                     }
                 }
             })

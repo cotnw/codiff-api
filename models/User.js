@@ -16,7 +16,7 @@ const UserSchema = new mongoose.Schema({
     socket_id: {
         type: String,
         required: false
-    },
+    }
 })
 
 const User = mongoose.model('User', UserSchema);
