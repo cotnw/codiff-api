@@ -28,12 +28,19 @@ router.post('/join', async (req,res) => {
             if (collaborators.contains(user.username)) {
                 room.online.push(user.username)
                 await Room.findOneAndUpdate({git_repo_url: req.body.git_repo_url, branch: req.body.branch, revision_id: req.body.revision_id}, {online: room.online}) // update online participants
-                res.json({success: true, room_id: room._id}) // request is successful; send Room id as response
+                if (room.latest) {
+                    res.json({success: true, room_id: room._id}) // request is successful; send Room id as response
+                } else {
+                    res.json({success: false, error: "Update your local repository to the latest commit."})
+                }
             } else {
                 res.json({success: false, error: "You aren't alowed to join the room. You aren't a collaborator on this repository."}) // return if user is not a collaborator
             }
         } else {
             try{
+                let oldRoom = await Room.findOne({git_repo_url: req.body.git_repo_url, branch: req.body.branch, latest: true})
+                oldRoom.latest = false
+                await oldRoom.save()
                 await axios.get(`https://api.github.com/repos/${ownerRepo}/branches`,{headers: {'Authorization': `Bearer ${req.query.access_token}`}}).then(( async response => {
                     response.data.forEach(async branch => {
                         if (req.body.branch == branch.name) {
@@ -43,7 +50,8 @@ router.post('/join', async (req,res) => {
                                     branch: req.body.branch,
                                     revision_id: req.body.revision_id,
                                     online: [user.username],
-                                    collaborators: collaborators
+                                    collaborators: collaborators,
+                                    latest: true
                                 })
                                 await newRoom.save() // save new Room
                                 res.json({success: true, room_id: newRoom._id}) // return new Room id
