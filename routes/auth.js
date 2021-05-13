@@ -1,12 +1,12 @@
-const express = require('express');
+const express = require('express')
 const axios = require('axios')
-const router = express.Router();
+const router = express.Router()
 const User = require('../models/User')
 const { oauthHeader } = require('../controllers/constants')
 
 router.get('/', (req, res) => {
     res.redirect('https://github.com/login/oauth/authorize?client_id=45f28c0f178cb8c343ab&scope=repo&read:org')
-});
+})
 
 router.get('/callback', (req, res) => {
     let code = req.query.code
@@ -38,8 +38,8 @@ router.get('/callback', (req, res) => {
             res.redirect(`http://localhost:15015/callback/${accessToken}`) //redirect for vscode extension to fetch token
         })
         .catch(function(error) {
-            console.log(error);
-        });
+            console.log(error)
+        })
 })
 
-module.exports = router;
+module.exports = router

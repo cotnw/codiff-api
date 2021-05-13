@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose')
 
 const RoomSchema = new mongoose.Schema({
     git_repo_url: {
@@ -20,9 +20,13 @@ const RoomSchema = new mongoose.Schema({
     collaborators: {
         type: Array,
         default: []
+    },
+    latest: {
+        type: Boolean,
+        default: true
     }
 })
 
-const Room = mongoose.model('Room', RoomSchema);
+const Room = mongoose.model('Room', RoomSchema)
 
-module.exports = Room;
+module.exports = Room
