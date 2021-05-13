@@ -18,13 +18,13 @@ router.post('/join', async (req,res) => {
             collaborators.push(user.login)
         })
     })).catch(err => {
-        res.json({success: false, error: err})
+        res.json({success: false, error: JSON.stringify(err)})
         console.log(err)
     })
     if (user) { // check if user exists
         await axios.get(`https://api.github.com/repos/${ownerRepo}/branches`,{headers: {'Authorization': `Bearer ${req.query.access_token}`}}).then(( async response => {
             response.data.forEach(async branch => {
-                if (!req.body.revision_id == branch.commit.sha) {
+                if (req.body.revision_id != branch.commit.sha) {
                     res.json({success: false, error: "Update your local repository to the latest commit."})
                 } else {
                     if (room) { // check if room exists
@@ -50,11 +50,10 @@ router.post('/join', async (req,res) => {
                         try{
                             let oldRoom = await Room.findOne({git_repo_url: req.body.git_repo_url, branch: req.body.branch, latest: true})
                             if (oldRoom) {
-                                oldRoom.latest = false
-                                let i = room.online.indexOf(user.username)
+                                let i = oldRoom.online.indexOf(user.username)
                                 if (i > -1) {
-                                    room.online.splice(index, 1)
-                                    await Room.findOneAndUpdate({_id: oldRoom._id}, {online: oldRoom.online})
+                                    oldRoom.online.splice(i, 1)
+                                    await Room.findOneAndUpdate({_id: oldRoom._id}, {online: oldRoom.online, latest: false})
                                 }
                                 let index = user.rooms.indexOf(oldRoom._id)
                                 if (index > -1) {
@@ -75,7 +74,8 @@ router.post('/join', async (req,res) => {
                             await User.findOneAndUpdate({access_token: req.query.access_token}, {rooms: user.rooms})
                             res.json({success: true, room_id: newRoom._id}) // return new Room id
                         } catch (err) {
-                            res.json({success: false, error: err})
+                            console.log(err)
+                            res.json({success: false, error: JSON.stringify(err)})
                         }   
                     }
                 }

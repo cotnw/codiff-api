@@ -52,7 +52,7 @@ io.on('connection', socket => {
                 let dbRoom = await Room.findOne({_id: room})
                 let i = dbRoom.online.indexOf(user.username);
                 if (i > -1) {
-                    dbRoom.online.splice(index, 1);
+                    dbRoom.online.splice(i, 1);
                     await Room.findOneAndUpdate({_id: oldRoom._id}, {online: oldRoom.online})
                 }
             })
@@ -73,6 +73,12 @@ io.on('connection', socket => {
         let user = await User.findOne({access_token: joinObject.accessToken})
         if (user.rooms.includes(joinObject.roomID)) {
             await socket.join(joinObject.roomID)
+        }
+    })
+    socket.on('push', async(pushObject) => {
+        let user = await User.findOne({access_token: pushObject.accessToken})
+        if (user.rooms.includes(pushObject.roomID)) {
+            io.to(pushObject.roomID).emit(pushObject.gitObject);
         }
     })
 })
