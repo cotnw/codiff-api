@@ -89,7 +89,7 @@ io.on('connection', socket => {
             socket.leave(leaveObject.roomID)
             let i = room.online.indexOf(user.username)
             if (i > -1) {
-                oldRoom.online.splice(i, 1)
+                room.online.splice(i, 1)
                 await Room.findOneAndUpdate({_id:room._id}, {online: room.online})
             }
             let index = user.rooms.indexOf(room._id)
