@@ -24,59 +24,61 @@ router.post('/join', async (req,res) => {
     if (user) { // check if user exists
         await axios.get(`https://api.github.com/repos/${ownerRepo}/branches`,{headers: {'Authorization': `Bearer ${req.query.access_token}`}}).then(( async response => {
             response.data.forEach(async branch => {
-                if (req.body.revision_id != branch.commit.sha) {
-                    res.json({success: false, error: "Update your local repository to the latest commit."})
-                } else {
-                    if (room) { // check if room exists
-                        await Room.findOneAndUpdate({git_repo_url: req.body.git_repo_url, branch: req.body.branch, revision_id: req.body.revision_id}, {collaborators: room.collaborators}) // update room collaborators on the database
-                        if (collaborators.includes(user.username)) {
-                            if(!room.online.includes(user.username)) {
-                                room.online.push(user.username)
-                                await Room.findOneAndUpdate({git_repo_url: req.body.git_repo_url, branch: req.body.branch, revision_id: req.body.revision_id}, {online: room.online}) // update online participants
-                            }
-                            if (room.latest) {
-                                if (!user.rooms.includes(room._id)) {
-                                    user.rooms.push(room._id)
-                                    await User.findOneAndUpdate({access_token: req.query.access_token}, {rooms: user.rooms})
+                if(req.body.branch == branch.name) {
+                    if (req.body.revision_id != branch.commit.sha) {
+                        res.json({success: false, error: "Update your local repository to the latest commit."})
+                    } else {
+                        if (room) { // check if room exists
+                            await Room.findOneAndUpdate({git_repo_url: req.body.git_repo_url, branch: req.body.branch, revision_id: req.body.revision_id}, {collaborators: room.collaborators}) // update room collaborators on the database
+                            if (collaborators.includes(user.username)) {
+                                if(!room.online.includes(user.username)) {
+                                    room.online.push(user.username)
+                                    await Room.findOneAndUpdate({git_repo_url: req.body.git_repo_url, branch: req.body.branch, revision_id: req.body.revision_id}, {online: room.online}) // update online participants
                                 }
-                                res.json({success: true, room_id: room._id}) // request is successful; send Room id as response
+                                if (room.latest) {
+                                    if (!user.rooms.includes(room._id)) {
+                                        user.rooms.push(room._id)
+                                        await User.findOneAndUpdate({access_token: req.query.access_token}, {rooms: user.rooms})
+                                    }
+                                    res.json({success: true, room_id: room._id}) // request is successful; send Room id as response
+                                } else {
+                                    res.json({success: false, error: "Update your local repository to the latest commit."})
+                                }
                             } else {
-                                res.json({success: false, error: "Update your local repository to the latest commit."})
+                                res.json({success: false, error: "You aren't alowed to join the room. You aren't a collaborator on this repository."}) // return if user is not a collaborator
                             }
                         } else {
-                            res.json({success: false, error: "You aren't alowed to join the room. You aren't a collaborator on this repository."}) // return if user is not a collaborator
+                            try{
+                                let oldRoom = await Room.findOne({git_repo_url: req.body.git_repo_url, branch: req.body.branch, latest: true})
+                                if (oldRoom) {
+                                    let i = oldRoom.online.indexOf(user.username)
+                                    if (i > -1) {
+                                        oldRoom.online.splice(i, 1)
+                                        await Room.findOneAndUpdate({_id: oldRoom._id}, {online: oldRoom.online, latest: false})
+                                    }
+                                    let index = user.rooms.indexOf(oldRoom._id)
+                                    if (index > -1) {
+                                        user.rooms.splice(index, 1)
+                                        await User.findOneAndUpdate({access_token: req.query.access_token}, {rooms: user.rooms})
+                                    }
+                                }
+                                let newRoom = Room({
+                                    git_repo_url: req.body.git_repo_url,
+                                    branch: req.body.branch,
+                                    revision_id: req.body.revision_id,
+                                    online: [user.username],
+                                    collaborators: collaborators,
+                                    latest: true
+                                })
+                                await newRoom.save() // save new Room
+                                user.rooms.push(newRoom._id)
+                                await User.findOneAndUpdate({access_token: req.query.access_token}, {rooms: user.rooms})
+                                res.json({success: true, room_id: newRoom._id}) // return new Room id
+                            } catch (err) {
+                                console.log(err)
+                                res.json({success: false, error: JSON.stringify(err)})
+                            }   
                         }
-                    } else {
-                        try{
-                            let oldRoom = await Room.findOne({git_repo_url: req.body.git_repo_url, branch: req.body.branch, latest: true})
-                            if (oldRoom) {
-                                let i = oldRoom.online.indexOf(user.username)
-                                if (i > -1) {
-                                    oldRoom.online.splice(i, 1)
-                                    await Room.findOneAndUpdate({_id: oldRoom._id}, {online: oldRoom.online, latest: false})
-                                }
-                                let index = user.rooms.indexOf(oldRoom._id)
-                                if (index > -1) {
-                                    user.rooms.splice(index, 1)
-                                    await User.findOneAndUpdate({access_token: req.query.access_token}, {rooms: user.rooms})
-                                }
-                            }
-                            let newRoom = Room({
-                                git_repo_url: req.body.git_repo_url,
-                                branch: req.body.branch,
-                                revision_id: req.body.revision_id,
-                                online: [user.username],
-                                collaborators: collaborators,
-                                latest: true
-                            })
-                            await newRoom.save() // save new Room
-                            user.rooms.push(newRoom._id)
-                            await User.findOneAndUpdate({access_token: req.query.access_token}, {rooms: user.rooms})
-                            res.json({success: true, room_id: newRoom._id}) // return new Room id
-                        } catch (err) {
-                            console.log(err)
-                            res.json({success: false, error: JSON.stringify(err)})
-                        }   
                     }
                 }
             })
