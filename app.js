@@ -82,6 +82,23 @@ io.on('connection', socket => {
             io.to(pushObject.roomID).emit(pushObject.gitObject);
         }
     })
+    socket.on('leave', async(leaveObject) => {
+        let user = await User.findOne({access_token: leaveObject.accessToken})
+        let room = await Room.findOne({_id: leaveObject.roomID})
+        if (user.rooms.includes(leaveObject.roomID)) {
+            socket.leave(leaveObject.roomID)
+            let i = room.online.indexOf(user.username)
+            if (i > -1) {
+                oldRoom.online.splice(i, 1)
+                await Room.findOneAndUpdate({_id:room._id}, {online: room.online})
+            }
+            let index = user.rooms.indexOf(room._id)
+            if (index > -1) {
+                user.rooms.splice(index, 1)
+                await User.findOneAndUpdate({access_token: req.query.access_token}, {rooms: user.rooms})
+            }
+        }
+    })
 })
 
 module.exports = app
