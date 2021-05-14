@@ -78,6 +78,7 @@ io.on('connection', socket => {
     socket.on('push', async(pushObject) => {
         let user = await User.findOne({access_token: pushObject.accessToken})
         if (user.rooms.includes(pushObject.roomID)) {
+            gitObject.username = user.username
             io.to(pushObject.roomID).emit(pushObject.gitObject);
         }
     })
