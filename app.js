@@ -53,7 +53,7 @@ io.on('connection', socket => {
                 let i = dbRoom.online.indexOf(user.username);
                 if (i > -1) {
                     dbRoom.online.splice(i, 1);
-                    await Room.findOneAndUpdate({_id: oldRoom._id}, {online: oldRoom.online})
+                    await Room.findOneAndUpdate({_id: dbRoom._id}, {online: dbRoom.online})
                 }
             })
         }
@@ -95,7 +95,7 @@ io.on('connection', socket => {
             let index = user.rooms.indexOf(room._id)
             if (index > -1) {
                 user.rooms.splice(index, 1)
-                await User.findOneAndUpdate({access_token: req.query.access_token}, {rooms: user.rooms})
+                await User.findOneAndUpdate({access_token: leaveObject.accessToken}, {rooms: user.rooms})
             }
         }
     })
