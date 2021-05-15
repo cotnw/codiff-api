@@ -59,10 +59,9 @@ io.on('connection', socket => {
         }
     })
     socket.on('save', async(saveObject) => {
-        console.log(saveObject)
         let user = await User.findOne({access_token: saveObject.accessToken})
         if (user.rooms.includes(saveObject.roomID)) {
-            io.to(saveObject.roomID).emit({
+            socket.to(saveObject.roomID).emit('save', {
                 username: user.username,
                 relativePath: saveObject.relativePath,
                 code: saveObject.code
@@ -72,14 +71,14 @@ io.on('connection', socket => {
     socket.on('join', async(joinObject) => {
         let user = await User.findOne({access_token: joinObject.accessToken})
         if (user.rooms.includes(joinObject.roomID)) {
-            await socket.join(joinObject.roomID)
+            socket.join(joinObject.roomID)
         }
     })
     socket.on('push', async(pushObject) => {
         let user = await User.findOne({access_token: pushObject.accessToken})
         if (user.rooms.includes(pushObject.roomID)) {
-            gitObject.username = user.username
-            io.to(pushObject.roomID).emit(pushObject.gitObject);
+            pushObject.gitObject.username = user.username
+            socket.to(pushObject.roomID).emit('push', pushObject.gitObject);
         }
     })
     socket.on('leave', async(leaveObject) => {
