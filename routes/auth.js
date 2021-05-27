@@ -11,7 +11,7 @@ router.get('/', (req, res) => {
 router.get('/callback', (req, res) => {
     let code = req.query.code
     axios.post('https://github.com/login/oauth/access_token', {
-            client_id: '45f28c0f178cb8c343ab',
+            client_id: process.env.GITHUB_OAUTH_CLIENT_ID,
             client_secret: process.env.GITHUB_OAUTH_CLIENT_SECRET,
             code: code
         })
