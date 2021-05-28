@@ -1,5 +1,5 @@
 # CoDiff API
-REST API for CoDiff - a VSCode extension that has live access to all your teammates' local changes, greatly improving communication: it notifies you of conflicts with teammates as they occur. Download the extension from [here](https://github.com/cotnw/codiff).
+REST API for CoDiff - a VSCode extension that has live access to all your teammates' local changes, greatly improving communication: it notifies you of conflicts with teammates as they occur. Download the extension from [here](https://marketplace.visualstudio.com/items?itemName=bar9.codiff).
 
 ## Dependencies
 - axios
